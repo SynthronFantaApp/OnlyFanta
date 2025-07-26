@@ -46,32 +46,78 @@
       <li>🎯 Suggerimenti sui migliori acquisti in base alla strategia scelta</li>
     </ul>
   </section>
-<section class="player-table">
-  <h3>Giocatori e Statistiche</h3>
-  <div id="giocatori-table">Caricamento dati...</div>
+<section class="tabella-giocatori">
+  <h3>Giocatori</h3>
+  <div id="tabella-container">
+    <p>Caricamento dati...</p>
+  </div>
+  <div id="scheda-giocatore" style="display:none; margin-top:30px; background:#f6f6fa; border-radius:10px; padding:18px;"></div>
 </section>
+
 <script>
 fetch('giocatori.json')
   .then(response => response.json())
   .then(data => {
-    if (!Array.isArray(data)) { document.getElementById('giocatori-table').innerText = 'Nessun dato trovato.'; return; }
-    // Prendi le chiavi principali da visualizzare (puoi modificarle)
-    const columns = [
-      "nome", "nome_normalizzato", "squadra", "ruoloClassic", "ruoloMantra", "prezzo"
+    // Solo le colonne base
+    const colonne = [
+      { chiave: "nome", label: "Nome" },
+      { chiave: "squadra", label: "Squadra" },
+      { chiave: "ruoloClassic", label: "Ruolo Classic" },
+      { chiave: "ruoloMantra", label: "Ruolo Mantra" },
+      { chiave: "prezzo", label: "Prezzo" }
     ];
-    // Crea l'intestazione della tabella
-    let html = '<table border="1" cellpadding="6" style="width:100%; border-collapse:collapse;">';
-    html += '<tr>' + columns.map(col => `<th>${col}</th>`).join('') + '</tr>';
-    // Riempie la tabella
-    data.forEach(gioc => {
-      html += '<tr>' + columns.map(col => `<td>${gioc[col] || ""}</td>`).join('') + '</tr>';
+
+    // Tabella base
+    let html = '<table style="width:100%;border-collapse:collapse;"><thead><tr>';
+    colonne.forEach(col => {
+      html += `<th style="border:1px solid #ddd;padding:6px;">${col.label}</th>`;
     });
-    html += '</table>';
-    document.getElementById('giocatori-table').innerHTML = html;
+    html += '</tr></thead><tbody>';
+
+    data.forEach((giocatore, idx) => {
+      html += `<tr style="cursor:pointer;" onclick="mostraScheda(${idx})">`;
+      colonne.forEach(col => {
+        html += `<td style="border:1px solid #ddd;padding:6px;">${giocatore[col.chiave] || ""}</td>`;
+      });
+      html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('tabella-container').innerHTML = html;
+
+    // Memorizza dati globali per la funzione scheda
+    window.__giocatori = data;
   })
-  .catch(() => {
-    document.getElementById('giocatori-table').innerText = 'Errore nel caricamento dati.';
+  .catch(error => {
+    document.getElementById('tabella-container').innerHTML = '<p>Errore nel caricamento dati.</p>';
+    console.error(error);
   });
+
+function mostraScheda(idx) {
+  const giocatore = window.__giocatori[idx];
+  let html = `<h4>${giocatore.nome} – ${giocatore.squadra}</h4>`;
+  html += '<table style="border-collapse:collapse;">';
+
+  // Cicla su tutti i campi e mostra tutto (anche annidati)
+  for (let key in giocatore) {
+    if (typeof giocatore[key] === "object" && giocatore[key] !== null) {
+      for (let subKey in giocatore[key]) {
+        html += `<tr><td style="border:1px solid #ddd;padding:5px;">${key}.${subKey}</td>
+        <td style="border:1px solid #ddd;padding:5px;">${giocatore[key][subKey]}</td></tr>`;
+      }
+    } else {
+      html += `<tr><td style="border:1px solid #ddd;padding:5px;">${key}</td>
+      <td style="border:1px solid #ddd;padding:5px;">${giocatore[key]}</td></tr>`;
+    }
+  }
+  html += '</table>';
+  html += `<button onclick="document.getElementById('scheda-giocatore').style.display='none';" style="margin-top:18px;">Chiudi scheda</button>`;
+  const box = document.getElementById('scheda-giocatore');
+  box.innerHTML = html;
+  box.style.display = 'block';
+}
+</script>
+
 </script>
 
   <!-- DEMO / PREVIEW -->
