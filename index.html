@@ -46,6 +46,33 @@
       <li>🎯 Suggerimenti sui migliori acquisti in base alla strategia scelta</li>
     </ul>
   </section>
+<section class="player-table">
+  <h3>Giocatori e Statistiche</h3>
+  <div id="giocatori-table">Caricamento dati...</div>
+</section>
+<script>
+fetch('giocatori.json')
+  .then(response => response.json())
+  .then(data => {
+    if (!Array.isArray(data)) { document.getElementById('giocatori-table').innerText = 'Nessun dato trovato.'; return; }
+    // Prendi le chiavi principali da visualizzare (puoi modificarle)
+    const columns = [
+      "nome", "nome_normalizzato", "squadra", "ruoloClassic", "ruoloMantra", "prezzo"
+    ];
+    // Crea l'intestazione della tabella
+    let html = '<table border="1" cellpadding="6" style="width:100%; border-collapse:collapse;">';
+    html += '<tr>' + columns.map(col => `<th>${col}</th>`).join('') + '</tr>';
+    // Riempie la tabella
+    data.forEach(gioc => {
+      html += '<tr>' + columns.map(col => `<td>${gioc[col] || ""}</td>`).join('') + '</tr>';
+    });
+    html += '</table>';
+    document.getElementById('giocatori-table').innerHTML = html;
+  })
+  .catch(() => {
+    document.getElementById('giocatori-table').innerText = 'Errore nel caricamento dati.';
+  });
+</script>
 
   <!-- DEMO / PREVIEW -->
   <section class="demo">
