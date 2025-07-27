@@ -92,80 +92,94 @@
 
 <script>
 fetch('giocatori.json')
+  .then(response => response.json())<style>
+#tabella-cerca-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 8px;
+}
+#cerca-giocatore {
+  padding: 6px 11px;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  margin-left: 8px;
+  font-size: 1em;
+  width: 180px;
+}
+#tabella-container table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.06em;
+  background: #fff;
+}
+#tabella-container th, #tabella-container td {
+  border: 1px solid #bbb;
+  padding: 7px 10px;
+  text-align: left;
+}
+#tabella-container tr:hover {
+  background: #eaf2fb;
+  cursor: pointer;
+}
+</style>
+
+<div id="tabella-cerca-container">
+  <label for="cerca-giocatore" style="font-weight:bold;">Cerca giocatore:</label>
+  <input type="text" id="cerca-giocatore" placeholder="Cerca per cognome...">
+</div>
+<div id="tabella-container">
+  <p>Caricamento dati...</p>
+</div>
+
+<script>
+let giocatoriFiltrati = [];
+let giocatoriOrig = [];
+let campoCognome = "nome"; // Cambia qui se il campo è "cognome" puro
+
+fetch('giocatori.json')
   .then(response => response.json())
   .then(data => {
-    // Solo giocatori del listone!
-    const filtrati = data.filter(g => g.in_listone === true);
+    // Filtro solo quelli col campo in_listone === true
+    giocatoriOrig = data.filter(g => g.in_listone === true);
+    giocatoriFiltrati = giocatoriOrig;
+    renderTabella(giocatoriOrig);
 
-    const colonne = [
-      { chiave: "nome", label: "Nome" },
-      { chiave: "squadra", label: "Squadra" },
-      { chiave: "ruoloClassic", label: "Ruolo Classic" },
-      { chiave: "ruoloMantra", label: "Ruolo Mantra" },
-      { chiave: "prezzo", label: "Prezzo" }
-    ];
-
-    let html = '<table><thead><tr>';
-    colonne.forEach(col => {
-      html += `<th>${col.label}</th>`;
-    });
-    html += '</tr></thead><tbody>';
-
-    filtrati.forEach((giocatore, idx) => {
-      html += `<tr onclick="mostraScheda(${idx})">`;
-      colonne.forEach(col => {
-        html += `<td>${giocatore[col.chiave] || ""}</td>`;
-      });
-      html += '</tr>';
-    });
-
-    html += '</tbody></table>';
-    document.getElementById('tabella-container').innerHTML = html;
-
-    window.__giocatori_filtrati = filtrati;
-    window.mostraScheda = function(idx) {
-      const giocatore = window.__giocatori_filtrati[idx];
-      let html = `<h4>${giocatore.nome} – ${giocatore.squadra}</h4>`;
-
-      // Info base
-      html += '<table style="border-collapse:collapse;margin-bottom:18px">';
-      ["ruoloClassic", "ruoloMantra", "prezzo"].forEach(key => {
-        html += `<tr><td style="border:1px solid #bbb;padding:5px;">${key}</td>
-        <td style="border:1px solid #bbb;padding:5px;">${giocatore[key] || ""}</td></tr>`;
-      });
-      html += '</table>';
-
-      // Se ha dati annate
-      if (giocatore.dati_2024 || giocatore.dati_2023) {
-        html += "<h5>Statistiche</h5>";
-        html += "<table style='border-collapse:collapse;'>";
-        if (giocatore.dati_2024) {
-          html += "<tr><td colspan='2' style='background:#f3f7ff; font-weight:bold;'>Stagione 2024</td></tr>";
-          for (let k in giocatore.dati_2024) {
-            html += `<tr><td style="border:1px solid #bbb;padding:5px;">${k}</td>
-            <td style="border:1px solid #bbb;padding:5px;">${giocatore.dati_2024[k]}</td></tr>`;
-          }
-        }
-        if (giocatore.dati_2023) {
-          html += "<tr><td colspan='2' style='background:#f7f3ff; font-weight:bold;'>Stagione 2023</td></tr>";
-          for (let k in giocatore.dati_2023) {
-            html += `<tr><td style="border:1px solid #bbb;padding:5px;">${k}</td>
-            <td style="border:1px solid #bbb;padding:5px;">${giocatore.dati_2023[k]}</td></tr>`;
-          }
-        }
-        html += "</table>";
+    document.getElementById('cerca-giocatore').addEventListener('input', function() {
+      const search = this.value.trim().toLowerCase();
+      if (search.length === 0) {
+        giocatoriFiltrati = giocatoriOrig;
+      } else {
+        giocatoriFiltrati = giocatoriOrig.filter(g =>
+          (g[campoCognome] || "").toLowerCase().includes(search)
+        );
       }
-      html += `<button onclick="document.getElementById('scheda-giocatore').style.display='none';" style="margin-top:18px;">Chiudi scheda</button>`;
-      const box = document.getElementById('scheda-giocatore');
-      box.innerHTML = html;
-      box.style.display = 'block';
-      window.scrollTo({ top: box.offsetTop - 60, behavior: "smooth" });
-    }
-  })
-  .catch(error => {
-    document.getElementById('tabella-container').innerHTML = '<p>Errore nel caricamento dati.</p>';
-    console.error(error);
+      renderTabella(giocatoriFiltrati);
+    });
   });
+
+function renderTabella(lista) {
+  let html = '<table><thead><tr><th>Cognome</th><th>Squadra</th><th>Ruolo Classic</th><th>Ruolo Mantra</th><th>Prezzo</th></tr></thead><tbody>';
+  lista.forEach((g, idx) => {
+    html += `<tr data-idx="${idx}"><td>${g.nome || ""}</td><td>${g.squadra || ""}</td><td>${g.ruoloClassic || ""}</td><td>${g.ruoloMantra || ""}</td><td>${g.prezzo || ""}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('tabella-container').innerHTML = html;
+
+  // Click per dettaglio
+  document.querySelectorAll('#tabella-container tbody tr').forEach(row => {
+    row.addEventListener('click', function() {
+      const idx = this.getAttribute('data-idx');
+      // Passo alla pagina giocatore l'idx relativo alla lista filtrata!
+      window.location.href = `giocatore.html?id=${idx}`;
+    });
+  });
+
+  // Ricorda la lista filtrata per dettaglio
+  window.__giocatori_filtrati = lista;
+}
+</script>
+
 </script>
 
   <!-- DEMO / PREVIEW -->
