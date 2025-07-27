@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OnlyFanta – Assistente Asta Fantacalcio</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Libreria PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
 <body>
   <!-- HERO SECTION -->
@@ -21,7 +23,10 @@
     <div class="steps">
       <div>
         <span>1️⃣</span>
-        <p>Carica o scegli il tuo listone</p>
+        <p>
+          <label for="uploadListone" style="cursor:pointer;">Carica o scegli il tuo listone</label>
+          <input type="file" id="uploadListone" accept=".pdf" style="display:none;">
+        </p>
       </div>
       <div>
         <span>2️⃣</span>
@@ -47,12 +52,11 @@
     </ul>
   </section>
 
-  <!-- NUOVA SEZIONE: Carica Listone -->
-  <section class="tabella-giocatori">
-    <h3>Carica il tuo Listone (PDF)</h3>
-    <input type="file" id="input-listone-pdf" accept="application/pdf" />
-    <button id="rimuovi-listone" style="display:none; margin-left:12px;">Rimuovi Listone</button>
-    <div id="preview-listone" style="margin-top:16px;"></div>
+  <!-- PREVIEW DEL LISTONE -->
+  <section>
+    <h3>Anteprima Listone (prime 10 righe)</h3>
+    <div id="anteprima-listone" style="background:#f6f6fa;padding:14px;border-radius:8px;margin-bottom:20px;overflow:auto;"></div>
+    <button id="visualizza-tutto" style="display:none;margin-bottom:24px;">Visualizza tutto</button>
   </section>
 
   <!-- DEMO / PREVIEW -->
@@ -74,11 +78,11 @@
     <h3>FAQ</h3>
     <details>
       <summary>Funziona con tutti i listoni?</summary>
-      <p>Sì, puoi caricare qualsiasi listone PDF/CSV/Excel/Google Sheet.</p>
+      <p>Sì, puoi caricare qualsiasi listone PDF (o CSV/Excel/Google Sheet in futuro).</p>
     </details>
     <details>
       <summary>Serve inserire dati a mano?</summary>
-      <p>No, puoi importare direttamente le statistiche da N8N o usare quelle già pronte.</p>
+      <p>No, puoi importare direttamente le statistiche o usare quelle già pronte.</p>
     </details>
     <details>
       <summary>Posso usarlo anche per il Mantra?</summary>
@@ -91,64 +95,47 @@
     <p>© 2025 OnlyFanta – <a href="mailto:info@onlyfanta.it">Contatti</a> – <a href="#">Privacy Policy</a></p>
   </footer>
 
-  <!-- PDF.js e LOGICA PREVIEW LISTONE -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- SCRIPT PDF PARSING -->
   <script>
-  function salvaListone(data) {
-    localStorage.setItem('listonePDFbase64', data);
-  }
-  function prendiListone() {
-    return localStorage.getItem('listonePDFbase64');
-  }
-  function rimuoviListone() {
-    localStorage.removeItem('listonePDFbase64');
-  }
-
-  document.getElementById('input-listone-pdf').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (file && file.type === "application/pdf") {
+    document.getElementById('uploadListone').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
       const reader = new FileReader();
-      reader.onload = function(ev) {
-        const base64 = ev.target.result.split(',')[1];
-        salvaListone(base64);
-        mostraAnteprimaListone(base64);
-      }
-      reader.readAsDataURL(file);
-    }
-  });
-
-  document.getElementById('rimuovi-listone').addEventListener('click', function() {
-    rimuoviListone();
-    location.reload();
-  });
-
-  function mostraAnteprimaListone(base64) {
-    document.getElementById('rimuovi-listone').style.display = "inline-block";
-    // PDF.js rendering preview prime 10 righe (PRIMA PAGINA)
-    const pdfData = atob(base64);
-    const loadingTask = pdfjsLib.getDocument({data: pdfData});
-    loadingTask.promise.then(pdf => {
-      pdf.getPage(1).then(page => {
-        page.getTextContent().then(function(textContent) {
-          const txt = textContent.items.map(x => x.str).join('\n');
-          let lines = txt.split('\n').filter(l => l.trim()).slice(0,10);
-          let html = "<pre style='background:#eee;padding:9px;border-radius:7px;font-size:1em;max-width:100%;overflow-x:auto;'>" + lines.join('\n') + "</pre>";
-          html += "<button id='visualizza-tutto' style='margin-top:10px;'>Visualizza tutto il Listone</button>";
-          document.getElementById('preview-listone').innerHTML = html;
-          document.getElementById('visualizza-tutto').onclick = function() {
-            window.location.href = "listone.html";
+      reader.onload = function(evt) {
+        const typedarray = new Uint8Array(evt.target.result);
+        pdfjsLib.getDocument({data: typedarray}).promise.then(function(pdf) {
+          let pagesPromises = [];
+          for (let i = 1; i <= pdf.numPages; i++) {
+            pagesPromises.push(pdf.getPage(i).then(page =>
+              page.getTextContent().then(textContent => 
+                textContent.items.map(item => item.str).join(' ')
+              )
+            ));
           }
+          Promise.all(pagesPromises).then(function(pagesText) {
+            // Unisci tutto il testo (più pagine)
+            const tutto = pagesText.join('\n');
+            const righe = tutto.split('\n').filter(r => r.trim().length > 0);
+            // Visualizza solo le prime 10 righe
+            let preview = '<pre style="white-space:pre-wrap;">' + righe.slice(0,10).join('\n') + '</pre>';
+            document.getElementById('anteprima-listone').innerHTML = preview;
+            // Mostra bottone visualizza tutto se ci sono più di 10 righe
+            if(righe.length > 10){
+              document.getElementById('visualizza-tutto').style.display = 'inline-block';
+              document.getElementById('visualizza-tutto').onclick = function(){
+                document.getElementById('anteprima-listone').innerHTML = '<pre style="white-space:pre-wrap;">' + righe.join('\n') + '</pre>';
+                this.style.display = 'none';
+              };
+            }
+          });
         });
-      });
+      };
+      reader.readAsArrayBuffer(file);
     });
-  }
-
-  // Se già caricato → mostra anteprima all’avvio
-  const listoneSalvato = prendiListone();
-  if (listoneSalvato) {
-    mostraAnteprimaListone(listoneSalvato);
-    document.getElementById('input-listone-pdf').style.display = "none";
-  }
+    // Quando clicchi sull’icona 1️⃣ apri la selezione file
+    document.querySelector('.how-it-works .steps div:first-child p label').onclick = function() {
+      document.getElementById('uploadListone').click();
+    }
   </script>
 </body>
 </html>
