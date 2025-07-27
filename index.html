@@ -39,148 +39,21 @@
     <h3>Funzionalità Chiave</h3>
     <ul>
       <li>📊 Statistiche dettagliate per ogni giocatore</li>
-      <li>🔄 Confronto annate (2023/24)</li>
+      <li>🔄 Confronto annate (2023/24, 2024/25)</li>
       <li>🤖 Suggerimenti in tempo reale durante l’asta</li>
       <li>💰 Gestione crediti e monitoraggio squadre avversarie</li>
       <li>🔥 Heatmap e dati avanzati</li>
       <li>🎯 Suggerimenti sui migliori acquisti in base alla strategia scelta</li>
     </ul>
   </section>
-<section class="tabella-giocatori">
-  <h3>Giocatori</h3>
-  <div id="tabella-container">
-    <p>Caricamento dati...</p>
-  </div>
-  <div id="scheda-giocatore" style="display:none; margin-top:30px; background:#f6f6fa; border-radius:10px; padding:18px;"></div>
-</section>
 
-<style>
-#tabella-container table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 1.08em;
-  margin-top: 12px;
-  background: #fff;
-}
-#tabella-container th, #tabella-container td {
-  border: 1px solid #bbb;
-  padding: 7px 10px;
-  text-align: left;
-}
-#tabella-container tr:hover {
-  background: #eaf2fb;
-  cursor: pointer;
-}
-#scheda-giocatore {
-  display:none;
-  margin-top:30px;
-  background:#f6f6fa;
-  border-radius:10px;
-  padding:18px;
-  box-shadow: 0 2px 10px #ccc2;
-  max-width: 700px;
-}
-</style>
-
-<section class="tabella-giocatori">
-  <h3>Giocatori – Listone Ufficiale</h3>
-  <div id="tabella-container">
-    <p>Caricamento dati...</p>
-  </div>
-  <div id="scheda-giocatore"></div>
-</section>
-
-<script>
-fetch('giocatori.json')
-  .then(response => response.json())<style>
-#tabella-cerca-container {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 8px;
-}
-#cerca-giocatore {
-  padding: 6px 11px;
-  border: 1px solid #bbb;
-  border-radius: 8px;
-  margin-left: 8px;
-  font-size: 1em;
-  width: 180px;
-}
-#tabella-container table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 1.06em;
-  background: #fff;
-}
-#tabella-container th, #tabella-container td {
-  border: 1px solid #bbb;
-  padding: 7px 10px;
-  text-align: left;
-}
-#tabella-container tr:hover {
-  background: #eaf2fb;
-  cursor: pointer;
-}
-</style>
-
-<div id="tabella-cerca-container">
-  <label for="cerca-giocatore" style="font-weight:bold;">Cerca giocatore:</label>
-  <input type="text" id="cerca-giocatore" placeholder="Cerca per cognome...">
-</div>
-<div id="tabella-container">
-  <p>Caricamento dati...</p>
-</div>
-
-<script>
-let giocatoriFiltrati = [];
-let giocatoriOrig = [];
-let campoCognome = "nome"; // Cambia qui se il campo è "cognome" puro
-
-fetch('giocatori.json')
-  .then(response => response.json())
-  .then(data => {
-    // Filtro solo quelli col campo in_listone === true
-    giocatoriOrig = data.filter(g => g.in_listone === true);
-    giocatoriFiltrati = giocatoriOrig;
-    renderTabella(giocatoriOrig);
-
-    document.getElementById('cerca-giocatore').addEventListener('input', function() {
-      const search = this.value.trim().toLowerCase();
-      if (search.length === 0) {
-        giocatoriFiltrati = giocatoriOrig;
-      } else {
-        giocatoriFiltrati = giocatoriOrig.filter(g =>
-          (g[campoCognome] || "").toLowerCase().includes(search)
-        );
-      }
-      renderTabella(giocatoriFiltrati);
-    });
-  });
-
-function renderTabella(lista) {
-  let html = '<table><thead><tr><th>Cognome</th><th>Squadra</th><th>Ruolo Classic</th><th>Ruolo Mantra</th><th>Prezzo</th></tr></thead><tbody>';
-  lista.forEach((g, idx) => {
-    html += `<tr data-idx="${idx}"><td>${g.nome || ""}</td><td>${g.squadra || ""}</td><td>${g.ruoloClassic || ""}</td><td>${g.ruoloMantra || ""}</td><td>${g.prezzo || ""}</td></tr>`;
-  });
-  html += '</tbody></table>';
-  document.getElementById('tabella-container').innerHTML = html;
-
-  // Click per dettaglio
-  document.querySelectorAll('#tabella-container tbody tr').forEach(row => {
-    row.addEventListener('click', function() {
-      const idx = this.getAttribute('data-idx');
-      // Passo alla pagina giocatore l'idx relativo alla lista filtrata!
-      window.location.href = `giocatore.html?id=${idx}`;
-    });
-  });
-
-  // Ricorda la lista filtrata per dettaglio
-  window.__giocatori_filtrati = lista;
-}
-</script>
-
-</script>
+  <!-- NUOVA SEZIONE: Carica Listone -->
+  <section class="tabella-giocatori">
+    <h3>Carica il tuo Listone (PDF)</h3>
+    <input type="file" id="input-listone-pdf" accept="application/pdf" />
+    <button id="rimuovi-listone" style="display:none; margin-left:12px;">Rimuovi Listone</button>
+    <div id="preview-listone" style="margin-top:16px;"></div>
+  </section>
 
   <!-- DEMO / PREVIEW -->
   <section class="demo">
@@ -201,7 +74,7 @@ function renderTabella(lista) {
     <h3>FAQ</h3>
     <details>
       <summary>Funziona con tutti i listoni?</summary>
-      <p>Sì, puoi caricare qualsiasi listone CSV/Excel/Google Sheet.</p>
+      <p>Sì, puoi caricare qualsiasi listone PDF/CSV/Excel/Google Sheet.</p>
     </details>
     <details>
       <summary>Serve inserire dati a mano?</summary>
@@ -217,5 +90,65 @@ function renderTabella(lista) {
   <footer>
     <p>© 2025 OnlyFanta – <a href="mailto:info@onlyfanta.it">Contatti</a> – <a href="#">Privacy Policy</a></p>
   </footer>
+
+  <!-- PDF.js e LOGICA PREVIEW LISTONE -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+  function salvaListone(data) {
+    localStorage.setItem('listonePDFbase64', data);
+  }
+  function prendiListone() {
+    return localStorage.getItem('listonePDFbase64');
+  }
+  function rimuoviListone() {
+    localStorage.removeItem('listonePDFbase64');
+  }
+
+  document.getElementById('input-listone-pdf').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file && file.type === "application/pdf") {
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const base64 = ev.target.result.split(',')[1];
+        salvaListone(base64);
+        mostraAnteprimaListone(base64);
+      }
+      reader.readAsDataURL(file);
+    }
+  });
+
+  document.getElementById('rimuovi-listone').addEventListener('click', function() {
+    rimuoviListone();
+    location.reload();
+  });
+
+  function mostraAnteprimaListone(base64) {
+    document.getElementById('rimuovi-listone').style.display = "inline-block";
+    // PDF.js rendering preview prime 10 righe (PRIMA PAGINA)
+    const pdfData = atob(base64);
+    const loadingTask = pdfjsLib.getDocument({data: pdfData});
+    loadingTask.promise.then(pdf => {
+      pdf.getPage(1).then(page => {
+        page.getTextContent().then(function(textContent) {
+          const txt = textContent.items.map(x => x.str).join('\n');
+          let lines = txt.split('\n').filter(l => l.trim()).slice(0,10);
+          let html = "<pre style='background:#eee;padding:9px;border-radius:7px;font-size:1em;max-width:100%;overflow-x:auto;'>" + lines.join('\n') + "</pre>";
+          html += "<button id='visualizza-tutto' style='margin-top:10px;'>Visualizza tutto il Listone</button>";
+          document.getElementById('preview-listone').innerHTML = html;
+          document.getElementById('visualizza-tutto').onclick = function() {
+            window.location.href = "listone.html";
+          }
+        });
+      });
+    });
+  }
+
+  // Se già caricato → mostra anteprima all’avvio
+  const listoneSalvato = prendiListone();
+  if (listoneSalvato) {
+    mostraAnteprimaListone(listoneSalvato);
+    document.getElementById('input-listone-pdf').style.display = "none";
+  }
+  </script>
 </body>
 </html>
