@@ -107,6 +107,7 @@ document.getElementById("pdf-input").addEventListener("change", async function(e
     for(let i=1; i<=Math.min(pdf.numPages,2); i++) { // Solo prime 2 pagine per preview veloce
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
+      console.log(content.items.map(i => i.str).join("\n"));
       text += content.items.map(i => i.str).join("\n") + "\n";
     }
     // Estrarre righe tabella
