@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Dettaglio Giocatore</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; }
+    .scheda-header { margin-bottom: 18px; }
+    .scheda-header h2 { margin: 0; }
+    .menu-anno { margin-bottom: 18px; }
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #f7f8fc;
+      margin-bottom: 20px;
+    }
+    .stats-table th, .stats-table td {
+      border: 1px solid #bbb;
+      padding: 7px 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="scheda-header">
+    <h2 id="gioc-nome">Caricamento...</h2>
+    <div id="gioc-info"></div>
+  </div>
+  <div class="menu-anno">
+    <label for="selettore-anno">Anno:</label>
+    <select id="selettore-anno"></select>
+  </div>
+  <div id="stats-container"></div>
+  <a href="index.html">← Torna alla lista giocatori</a>
+  <script>
+    // Prendo l'ID giocatore dalla querystring
+    function getIdFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      return parseInt(params.get('id'), 10);
+    }
+    let giocatore = null;
+
+    fetch('giocatori.json')
+      .then(r => r.json())
+      .then(data => {
+        // Ricostruisci lista filtrata anche qui!
+        const giocatoriFiltrati = data.filter(g => g.in_listone === true);
+        const id = getIdFromQuery();
+        giocatore = giocatoriFiltrati[id];
+        if (!giocatore) {
+          document.body.innerHTML = "<p>Giocatore non trovato.</p>";
+          return;
+        }
+        document.getElementById('gioc-nome').textContent = giocatore.nome || "Senza nome";
+        document.getElementById('gioc-info').innerHTML = `
+          <b>Squadra:</b> ${giocatore.squadra || "-"} &nbsp; | &nbsp;
+          <b>Ruolo Classic:</b> ${giocatore.ruoloClassic || "-"} &nbsp; | &nbsp;
+          <b>Ruolo Mantra:</b> ${giocatore.ruoloMantra || "-"} &nbsp; | &nbsp;
+          <b>Prezzo:</b> ${giocatore.prezzo || "-"}
+        `;
+
+        // Raccolgo gli anni disponibili
+        const annate = [];
+        if (giocatore.dati_2024) annate.push("2024");
+        if (giocatore.dati_2023) annate.push("2023");
+        // Se vuoi aggiungere altri anni, qui...
+
+        const selettore = document.getElementById('selettore-anno');
+        annate.forEach(a => {
+          const opt = document.createElement('option');
+          opt.value = a;
+          opt.textContent = a;
+          selettore.appendChild(opt);
+        });
+        selettore.addEventListener('change', function() {
+          renderStats(this.value);
+        });
+        renderStats(annate[0] || "");
+
+        function renderStats(anno) {
+          let dati = giocatore[`dati_${anno}`];
+          if (!dati) {
+            document.getElementById('stats-container').innerHTML = "<em>Nessun dato disponibile per quest'anno.</em>";
+            return;
+          }
+          // Stats in ORIZZONTALE
+          let html = '<table class="stats-table"><tr>';
+          Object.keys(dati).forEach(k => {
+            html += `<th>${k}</th>`;
+          });
+          html += '</tr><tr>';
+          Object.values(dati).forEach(v => {
+            html += `<td>${v}</td>`;
+          });
+          html += '</tr></table>';
+          document.getElementById('stats-container').innerHTML = html;
+        }
+      });
+  </script>
+</body>
+</html>
