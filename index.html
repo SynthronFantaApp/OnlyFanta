@@ -38,6 +38,47 @@
       </div>
     </div>
   </section>
+<section class="carica-listone">
+  <h3>1️⃣ Carica o scegli il tuo listone</h3>
+  <input type="file" id="input-pdf" accept="application/pdf" style="margin: 18px 0;">
+  <div id="anteprima-listone"></div>
+</section>
+<!-- METTI QUESTO IN HEAD PRIMA DEGLI ALTRI SCRIPT -->
+<script src="https://unpkg.com/pdfjs-dist/build/pdf.min.js"></script>
+<script>
+document.getElementById('input-pdf').addEventListener('change', function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function () {
+    const typedarray = new Uint8Array(this.result);
+    const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+    let testo = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      testo += content.items.map(item => item.str).join(' ') + '\n';
+    }
+    // Split righe, rimuovi righe vuote, prendi solo le prime 10
+    const righe = testo.split('\n').filter(r => r.trim()).slice(0, 10);
+    let html = '<table><tbody>';
+    righe.forEach(riga => {
+      html += '<tr>';
+      riga.split(/\s{2,}/).forEach(cell => {
+        html += `<td>${cell.trim()}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('anteprima-listone').innerHTML = html + `<button id="visualizza-tutto">Visualizza tutto</button>`;
+    // Bottoncino per future funzioni
+    document.getElementById('visualizza-tutto').onclick = function() {
+      alert('(Prossimo step: listone completo e click su giocatori)');
+    }
+  }
+  reader.readAsArrayBuffer(file);
+});
+</script>
 
   <!-- FEATURES -->
   <section class="features">
